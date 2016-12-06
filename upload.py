@@ -3,7 +3,7 @@ import requests
 import json
 
 # add token between quotes
-authentication = ''
+authentication = 'gPRPKr5XlFKcTot94IB-jdf4DsuQ8yS_J1AEJNyBSTE'
 
 endpoint = 'https://api.crimsonhexagon.com/api/content/upload'
 
@@ -26,9 +26,11 @@ def parse():
 
             for row in reader:
 
-                title = row.get('title').strip() or row.get('TITLE').strip()
+                if row['title']:
+                    title = row.get('title').strip() or row.get('TITLE').strip()
                 date = row.get('date') or row.get('DATE')
-                author = row.get('author') or row.get('AUTHOR')
+                if row['author']:
+                    author = row.get('author') or row.get('AUTHOR')
                 url = row.get('url') or row.get('URL')
                 contents = row.get('contents').strip() or row.get('CONTENTS').strip()
                 content_type = row.get('type') or row.get('TYPE')
@@ -60,12 +62,14 @@ def parse():
                     if not row.get('latitude') or not row.get('longitude'):
                         print('Row {} missing geolocation.'.format(rowNumber))
 
-                    geolocation = {
-                        'latitude': float(row.get('latitude')),
-                        'longitude': float(row.get('longitude'))
-                    }
+                    if row['latitude'] and row['longitude']:
 
-                    payload['geolocation'] = geolocation
+                        geolocation = {
+                            'latitude': float(row.get('latitude')),
+                            'longitude': float(row.get('longitude'))
+                        }
+
+                        payload['geolocation'] = geolocation
 
                 elif 'zipcode' in row:
 
@@ -79,19 +83,21 @@ def parse():
                     payload['geolocation'] = geolocation
 
                 if 'gender' in row:
-                    gender = row.get('gender')
+                    if row['gender']:
+                        gender = row.get('gender')
                     payload['gender'] = gender
                     if not row.get('gender'):
                         print('Row {} missing gender.'.format(rowNumber))
 
                 if 'age' in row:
-                    age = row.get('age')
-                    payload['age'] = age
+                    if row['age']:
+                        age = row.get('age')
+                    payload['age'] = int(age)
                     if not row.get('age'):
                         print('Row {} missing age.'.format(rowNumber))
 
                 documents.append(payload)
-                #print json.dumps(payload)
+                print json.dumps(payload)
 
                 # if 1000 documents ready to upload, yield the documents to upload, erase the list of documents and continue on
                 if len(documents) == 1000:
@@ -120,9 +126,5 @@ def upload():
 
         response = requests.request("POST", endpoint, data=json.dumps(payload), params=query_parameters)
         print response.text
-        response = json.loads(response)
-        print response['message']
 
 upload()
-
-
