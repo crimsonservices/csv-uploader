@@ -3,7 +3,7 @@ import requests
 import json
 
 # add token between quotes
-authentication = 'gPRPKr5XlFKcTot94IB-jdf4DsuQ8yS_J1AEJNyBSTE'
+authentication = ''
 
 endpoint = 'https://api.crimsonhexagon.com/api/content/upload'
 
