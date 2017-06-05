@@ -124,6 +124,7 @@ def parse():
                     rowNumber = rowNumber + 1
 
                 except Exception as e:
+		    # count number of error documents, not used except for troubleshooting
                     global counter
                     counter += 1
                     pass
