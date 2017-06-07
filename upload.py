@@ -5,6 +5,9 @@ import json
 # add your authentication token between quotes
 authentication = ''
 
+# change to True if your token is for a sysAdmin
+sysAdmin = False
+
 endpoint = 'https://api.crimsonhexagon.com/api/content/upload'
 
 counter = 0
@@ -29,21 +32,21 @@ def parse():
 
             # for each row in CSV file do stuff...
             for row in reader:
-                
+
            		# for each key in the CSV dictionary, strip whitespace and add to variable (also check for all caps [e.g. TITLE vs title])
                 if row['title']: # make sure title exists
-                    title = row.get('title').strip() or row.get('TITLE').strip() 
-                
+                    title = row.get('title').strip() or row.get('TITLE').strip()
+
                 if row['author']: # make sure author exists
                     author = row.get('author').strip().decode('utf-8') or row.get('AUTHOR').strip().decode('utf-8') # strip whitespace but also decode to deal with odd characters
-                
+
                 contents = row.get('contents').strip().decode('utf-8') or row.get('CONTENTS').strip().decode('utf-8')
 
                 url = row.get('url') or row.get('URL')
                 date = row.get('date') or row.get('DATE')
                 content_type = row.get('type') or row.get('TYPE')
                 language = row.get('language') or row.get('LANGUAGE')
-                
+
                 try:
 
                 	# create a document from the CSV dictionary "row" variables we just created
@@ -57,19 +60,36 @@ def parse():
                         'type': content_type
                     }
 
-                    # check if document includes country, state, and city string, if exists add to document payload
-                    if 'country' and 'state' and 'city' in row:
+                    # check if document includes country and/or state and/or city strings, if exists add to document payload
+                    if 'country' in row:
 
-                        if not row.get('country') or not row.get('state') or not row.get('city'):
-                            print('Row {} missing geolocation.'.format(rowNumber))
+                        if 'state' in row:
 
-                        geolocation = {
-                            'id': '{}.{}.{}'.format(row.get('country'), row.get('state'), row.get('city'))
-                        }
+                            if row.get('state') and not row.get('country'):
+                                print('Row {} missing country.'.format(rowNumber))
 
-                        payload['geolocation'] = geolocation
+                            if 'city' in row:
 
-                    # if no country,state,city then try for lat/long, if exists add to document payload
+                                if row.get('city') and not row.get('state'):
+                                    print('Row {} missing state.'.format(rowNumber))
+
+                                    payload['geolocation'] = {
+                                        'id': '{}.{}.{}'.format(row.get('country'), row.get('state'), row.get('city'))
+                                    }
+
+                            else:
+
+                                payload['geolocation'] = {
+                                    'id': '{}.{}'.format(row.get('country'), row.get('state'))
+                                }
+
+                        elif row.get('country'):
+
+                            payload['geolocation'] = {
+                                'id': '{}'.format(row.get('country'))
+                            }
+
+                    # if no country then try for lat/long, if exists add to document payload
                     elif 'latitude' and 'longitude' in row:
 
                         if not row.get('latitude') or not row.get('longitude'):
@@ -116,8 +136,8 @@ def parse():
                     # add the document to the list of documents
                     documents.append(payload)
 
-                    # if 1000 documents ready to upload, yield the documents to upload, erase the list of documents and continue on
-                    if len(documents) == 1000:
+                    # if 1000/100,000 documents ready to upload, yield the documents to upload, erase the list of documents and continue on
+                    if len(documents) == (100000 if sysAdmin else 1000):
                         yield documents
                         documents[:] = []
 
